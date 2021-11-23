@@ -8,7 +8,24 @@ documents about famous people. I have geared my project towards
 famous musicians. The index should type various types of queries 
 and also there should at least be two text fields. ElasticSearch 
 was used to for indexing. Whereas beautifulsoup was used for 
-scraping. The project was implemented in three phases; 
+scraping. 
+
+The important files and directories of the repository is shown below.
+```
+project
+│   README.md
+│   scraping.ipynb - Scraping functions and saving json
+|   preprocessing.ipynb - Preprocessing functions 
+|   indexing.ipynb  - Indexing to elastic search 
+│
+└───data
+│   │   famous_people_raw_final.json - Raw scraped data outputed from scraping.ipynb
+│   │   famous_people_cleaned_final.json - Cleaned data outputted from preprocessing.ipynb
+│   
+└───images - Architecture and Pipeline diagrams
+```
+
+The project was implemented in three phases; 
 1. Data Scraping 
 2. Data Preprocessing
 3. Indexing
@@ -115,6 +132,10 @@ was used. For index creation the following query was issued.
       "பிறந்த திகதி": {
         "type" : "date",
         "format" : "dd/mm/yyyy"
+      },
+      "பிறந்த மாதம்":{
+        "type": "text",
+        "fielddata": true
       }
     }
   }
@@ -137,44 +158,40 @@ If not set will not be able to do range queries on this field.
 ### Queries
 
 The following queries could be executed on the created index.
-1. Fundamental Search - User can search without any information in the body.
+1. *Fundamental Search* - User can search with a query string across all fields. In the example below we search for உதித் in all fields.
 ```json
-GET famouspeopledatabase/_search
-```
-2. Normal search across all fields - User can search with a query string across all fields.
-```json
-GET famouspeopledatabase/_search
-{
-    "query": {
-        "query_string": {
-            "query": "உதித்"
-        }
-    }
-}
-```
-3. Wildcard query - Similar to the above query but the user can search with wildcards denoted by *. Similarly this can be done for field based query as well.
-```json
-GET famouspeopledatabase/_search
 {
   "query": {
     "query_string": {
-        "query": "இளைய*"
-      }
+      "query": "உதித்",
+      "fuzziness" : "AUTO"
+    }
   }
 }
 ```
-4. Simple match query - User can specify the query string but can search within a particular field.
+2. *Wildcard query* - Similar to the above query but the user can search with wildcards denoted by *. Similarly this can be done for field based query as well. In the below example we use இளைய* which would return everything starting with it.
 ```json
-GET famouspeopledatabase/_search
 {
- "query" : {
+  "query": {
+    "query_string": {
+      "query": "இளைய*"
+    }
+  }
+}
+```
+3. *Simple match query* - User can specify the query string but can search within a particular field.
+```json
+{
+  "query" : {
     "match" : {
-     "பெயர்" : "ஹம்சலேகா"
-   }
- }
+      "பெயர்" : {
+        "query" : "ஏ. எம். ராஜா",
+        "fuzziness" : "AUTO"
+      }
+    }
+  }
 }
 
-GET famouspeopledatabase/_search
 {
   "query":{
     "match":{
@@ -183,51 +200,110 @@ GET famouspeopledatabase/_search
   }
 }
 ```
-5. Multi match query
+4. *Multi match query* - Users search in multiple fields and match with a OR conidition.
 ```json
-GET famouspeopledatabase/_search
 {
-      "query" : {
-         "multi_match" : {
-             "query" : "பாலசுப்பிரமணியம்",
-             "fields": ["அறிமுகம்","உள்ளடக்கம்"]
-         }
-     }
+  "query" : {
+    "multi_match" : {
+      "query" : "பாலசுப்பிரமணியம்",
+      "fields": ["அறிமுகம்","உள்ளடக்கம்"]
+    }
+  }
 }
 ```
-6. Range query
+5. *Range query* - Here user can specify a range to accumulate data from. Below we get musicians born between 1970-1980.
 ```json
-GET famouspeopledatabase/_search
+{
+  "query": {
+    "range": {
+      "பிறந்த திகதி": {
+        "gte": "01/01/1970",
+        "lte": "01/01/1980"
+      }
+    }
+  }
+}
+```
+6. *Bool query* - Can define must and must not queries. In the following example we check if person is born in Chennai in July and must not be born after 1980.
+```json
+{
+  "query": {
+    "bool" : {
+      "must" : [
+        {
+          "match": { "பிறப்பிடம் தமிழில்": "சென்னை" }
+        },
+        {
+          "match": { "பிறந்த திகதி தமிழில்": "ஆடி" }
+        }
+      ],
+      "must_not" : [
+        {
+          "range" : {
+            "பிறந்த திகதி" : {
+              "gte" : "01/01/1980"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+7. *Bool prefix query* - Check if the documents contain the exact prefix and returns results.
+```json
+{
+    "query": {
+        "match_bool_prefix" : {
+            "உள்ளடக்கம்" : "பிரபலமான திரை"
+        }
+    }
+}
+```
+8. *Phrase match query* - Match phrases instead of single words. In the below example we do a biword match.
+```json
+{
+    "query": {
+        "match_phrase": {
+            "உள்ளடக்கம்": "பயிற்சி பெற்றிருந்தார்"
+        }
+    }
+}
+```
+9. *More like this query* - MLT queries are helpful in text mining and hence
+   extending the support to a huge input space and can be used in text mining.
+```json
 {
     "query":{
+       "more_like_this":{
+          "fields":[
+             "அறிமுகம்"
+          ],
+          "like":"கமல்ஹாசன் ஒரு புகழ்பெற்ற இந்தியத் திரைப்பட நடிகரும் மற்றும் அரசியல்வாதியும் ஆவார். இவர் சில திரைப்படங்களை இயக்கியும் உள்ளார். இவரின் மாறுபட்ட வேடங்களைக் கொண்ட நடிப்பிற்காக பரவலாக அறியப்படுகிறார். கமல்ஹாசன் சிறந்த குழந்தை நட்சத்திரம் மற்றும் சிறந்த நடிகர் என்ற முறையில் 4 தேசிய விருதுகளும், சிறந்த படம் என்ற முறையில் தயாரிப்பாளராக 1 தேசிய விருதும், 10 தமிழக அரசு திரைப்பட விருதுகள்கள், 4 ஆந்திர அரசின் நந்தி விருதுகள், 19 பிலிம்பேர் விருதுகள் உள்ளடங்கலாக பல இந்திய விருதுகளை வென்றுள்ளார், இவர் சிறந்த பிறமொழிப்படத்திற்கான, அகாதமி விருதிற்கு இந்தியாவிலிருந்து பரிந்துரைக்கப்பட்ட திரைப்படங்களில் அதிகமானவற்றிலும் நடித்திருந்தார்.நடிகராக மட்டுமல்லாது திரைக்கதையாசிரியர், இயக்குநர், பாடலாசிரியர், பின்னணிப் பாடகர், நடன அமைப்பாளர் எனப் பன்முகத்தன்மை கொண்டவராக விளங்குகின்றார்.இந்திய திரைத்துறைக்கு ஆற்றிய பணிக்காக பத்ம பூசண், பத்மசிறீ விருதும் அவருக்கு வழங்கப்பட்டுள்ளது. அத்துடன் சத்தியபாமா பல்கலைக்கழகம் கமல்ஹாசனிற்கு கௌரவ முனைவர் பட்டம் வழங்கி கௌரவித்தது. 2019 இல் 60 ஆண்டுகளை திரைத்துறையில் நிறைவுசெய்த இந்திய நடிகர்கள் மிகச்சிலரில் ஒருவரானார்.",
+          "min_term_freq":1,
+          "max_query_terms":20
+       }
+    }
+  }
+```
+10. *Term aggregation query* - Used to create buckets and aggregate returned results. In the below query we get musicians born between 1960-1990 and then aggregate them using the months in which they were born.
+```json
+{
+    "size" : 0,
+    "query": {
         "range": {
             "பிறந்த திகதி": {
-                "gte": "24/01/1983"
+                "gte": "01/01/1960",
+                "lte": "01/01/1990"
+            }
+        }
+    },
+    "aggs": {
+        "months": {
+            "terms": {
+                "field": "பிறந்த மாதம்"
             }
         }
     }
 }
 ```
-
----
-
-### Directory Structure
-The important files and directories of the repository is shown below.
-```
-project
-│   README.md
-│   scraping.ipynb - Scraping functions and saving json
-|   preprocessing.ipynb - Preprocessing functions 
-|   indexing.ipynb  - Indexing to elastic search 
-│
-└───data
-│   │   famous_people_raw_final.json - Raw scraped data outputed from scraping.ipynb
-│   │   famous_people_cleaned_final.json - Cleaned data outputted from preprocessing.ipynb
-│   
-└───images - Architecture and Pipeline diagrams
-```
----
-
-### License
-
-Apache License 2.0
