@@ -151,7 +151,8 @@ This analyzer contained the following components,
 4. Stemmer - Finally the tokens were stemmed using hunspell stemmer. Stemming lists were obtained from [AshokR](https://github.com/AshokR/TamilNLP/tree/master/tamilnlp/Resources).
 
 For the date field, type was mentioned as date and the format as dd/mm/yyyy.
-If not set will not be able to do range queries on this field.
+If not set will not be able to do range queries on this field. Also the month
+field is set as fielddata in order to do aggregate queries on it.
 
 ---
 
