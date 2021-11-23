@@ -7,9 +7,8 @@ Information Retrieval module. The task was to create an index for
 documents about famous people. I have geared my project towards
 famous musicians. The index should type various types of queries 
 and also there should at least be two text fields. ElasticSearch 
-was used to for indexing. Whereas beautifulsoup was used for scraping.
-The project was implemented in 
-three phases; 
+was used to for indexing. Whereas beautifulsoup was used for 
+scraping. The project was implemented in three phases; 
 1. Data Scraping 
 2. Data Preprocessing
 3. Indexing
@@ -138,11 +137,12 @@ If not set will not be able to do range queries on this field.
 ### Queries
 
 The following queries could be executed on the created index.
+1. Fundamental Search - User can search without any information in the body.
 ```json
-# 1) FUNDAMENTAL SEARCH - User can search without any information in the body.
 GET famouspeopledatabase/_search
-
-# 2) NORMAL SEARCH ACROSS ALL FIELDS - User can search with a query string across all fields.
+```
+2. Normal search across all fields - User can search with a query string across all fields.
+```json
 GET famouspeopledatabase/_search
 {
     "query": {
@@ -151,8 +151,9 @@ GET famouspeopledatabase/_search
         }
     }
 }
-
-# 3) WILDCARD QUERY - Similar to the above query but the user can search with wildcards denoted by *. Similarly this can be done for field based query as well.
+```
+3. Wildcard query - Similar to the above query but the user can search with wildcards denoted by *. Similarly this can be done for field based query as well.
+```json
 GET famouspeopledatabase/_search
 {
   "query": {
@@ -161,8 +162,9 @@ GET famouspeopledatabase/_search
       }
   }
 }
-
-# 4) SIMPLE MATCH QUERY - User can specify the query string but can search within a particular field. 
+```
+4. Simple match query - User can specify the query string but can search within a particular field.
+```json
 GET famouspeopledatabase/_search
 {
  "query" : {
@@ -180,8 +182,9 @@ GET famouspeopledatabase/_search
     }
   }
 }
-
-# MULTI MATCH QUERY
+```
+5. Multi match query
+```json
 GET famouspeopledatabase/_search
 {
       "query" : {
@@ -191,7 +194,9 @@ GET famouspeopledatabase/_search
          }
      }
 }
-# RANGE QUERY
+```
+6. Range query
+```json
 GET famouspeopledatabase/_search
 {
     "query":{
@@ -203,6 +208,7 @@ GET famouspeopledatabase/_search
     }
 }
 ```
+
 ---
 
 ### Directory Structure
