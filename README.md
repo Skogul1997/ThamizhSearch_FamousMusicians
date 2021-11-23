@@ -20,7 +20,7 @@ project
 │
 └───data
 │   │   famous_people_raw_final.json - Raw scraped data outputed from scraping.ipynb
-│   │   famous_people_cleaned_final.json - Cleaned data outputted from preprocessing.ipynb
+│   │   famous_people_cleaned_final.json - Cleaned data outputed from preprocessing.ipynb
 │   
 └───images - Architecture and Pipeline diagrams
 ```
